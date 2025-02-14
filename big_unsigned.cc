@@ -4,29 +4,18 @@
 
 #include "big_unsigned.h"
 
-
-  // ● Constructores:
-  // YO GUARDO EL NUMERO AL REVES Y LO IMPRIMO EN EL SENTIDO CORRECTO
-  // le pasas un numero debo pasarlo a char con ascii
-
-  BigUnsigned::BigUnsigned(unsigned int n) { // es un numero 0 al 4,294,967,295
+  BigUnsigned::BigUnsigned(unsigned int n) { 
     unsigned int digit;
-    if (n == 0) {
-      bu_value_.push_back(n + '0');
-    }
     while (n != 0) {
-      digit = n % 10;
+      digit = n % 10 + '0';
       n = n / 10;
-      bu_value_.push_back(digit + '0'); // + '0' para visualizar el valor
+      bu_value_.push_back(digit);
     }
 
   }
 
-
-  // 1234567... irlo separando
-  BigUnsigned::BigUnsigned(const unsigned char* chain_ptr) { // coger cada uno de los caracteres del char* y irlo poniendo en el vector
+  BigUnsigned::BigUnsigned(const unsigned char* chain_ptr) { 
     while (*chain_ptr != '\0') { // while (*chain_ptr)
-      // bu_value_.push_back(*chain_ptr); no sirve porque me da el valor al reves por como funciona mi operator<<
       bu_value_.insert(bu_value_.begin(), *chain_ptr);
       ++chain_ptr;
     }
@@ -40,33 +29,26 @@
   
   
   // ● Asignación:
-  // BigUnsigned& BigUnsigned::operator=(const BigUnsigned& other) { // no es BigUnsigned::BigUnsigned&, sino solo BigUnsigned&
-  //   if (*this = other) { // evitar la autoasignacion
-  //     bu_digit_ = other.bu_digit_;
-  //     bu_value_ = other.bu_value_;
-  //   }
-  //   return *this;
-  // }
+  BigUnsigned& BigUnsigned::operator=(const BigUnsigned& other) { 
+    if (this != &other) { // evitar la autoasignacion
+      bu_digit_ = other.bu_digit_;
+      bu_value_ = other.bu_value_;
+    }
+    return *this;
+  }
 
   // ● Inserción y extracción en flujo: (friends)
   std::ostream& operator<<(std::ostream& os, const BigUnsigned& other) {
-    for (int i = other.GetBuValue().size() - 1; i >= 0; --i) { // hay que hacerlo al reves
-      if (other.bu_value_[0] == '0') { // si el primer caracter es 0 eliminalo
-        other.bu_value_.erase(other.bu_value_.begin());
-      }
+    for (int i = other.GetBuValue().size() - 1; i >= 0; --i) { 
       os << other.GetBuValue()[i];
     }
     return os;
   }
 
-  std::istream& operator>>(std::istream& is, BigUnsigned& other) { // leer datos std::cin >> bu5;
-    std::string input;
-    is >> input;
-    for (char character : input) {
-      other.bu_value_.insert(other.bu_value_.begin(), character);
-    }
-    return is;
-  }
+
+  // std::istream& operator>>(std::istream& is, BigUnsigned& other) { // leer datos std::cin >> bu5;
+  
+  // }
 
   // ● Comparación: (friends)
   bool BigUnsigned::operator==(const BigUnsigned& other) const { // mismo tamaño y mismos elementos en misma posicion
@@ -82,7 +64,7 @@
   }
 
   bool operator<(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-    bool is_lower = false;// bu1 < bu2 sera true
+    bool is_lower = false;
     if (bu1.bu_value_.size() < bu2.bu_value_.size()) {
       is_lower = true;
     }
@@ -113,7 +95,7 @@
   }
 
   // Post-incremento
-  BigUnsigned BigUnsigned::operator++(int n) {  // el int n es una marca para distinguir el pre inc del post inc
+  BigUnsigned BigUnsigned::operator++(int n) {  
     BigUnsigned post_increment = *this;  
     ++(*this);                 
     return post_increment;
@@ -134,10 +116,7 @@
     return post_decrement;
   } 
 
-  // // ● Operadores aritméticos:
-
-  
-
+   // ● Operadores aritméticos:
    BigUnsigned operator+(const BigUnsigned& bu1, const BigUnsigned& bu2) {
       unsigned int carry{0};
       unsigned int sum{0};
@@ -153,23 +132,21 @@
           if (i < bu2.bu_value_.size()) {
             bu2_digit = bu2.bu_value_[i] - '0';
           }
-          sum = bu1_digit + bu2_digit + carry; // hay que poner menos '0' o sino no suma bien
+          sum = bu1_digit + bu2_digit + carry; 
           carry = sum / 10;
           sum = sum % 10;
-           // el carry se le suma al numero siguiente
           result.bu_value_.push_back(sum + '0');
         }
         if (carry == 1) { // caso en el que no queden mas operaciones de digitos y haya carry
-          result.bu_value_.push_back(carry + '0'); // puede que haga falta usar insert
+          result.bu_value_.push_back(carry + '0'); 
         }
       return result;
     }
-      // unsigned int a unsgined char + '0'
-      // unsigned char a unsigned int - '0'
-  // si la resta da negativo devolver 0 si la resta da positivo devolver el valor
+      
   BigUnsigned BigUnsigned::operator-(const BigUnsigned& other) const {
       unsigned int sub{0};
       BigUnsigned result;
+      bool borrow = false; // flag para ver si el siguiente numero se le resta 1
       unsigned int max_bu_size = std::max(bu_value_.size(), other.bu_value_.size());
         
         for (unsigned int i = 0; i < max_bu_size; ++i) {
@@ -181,30 +158,30 @@
           if (i < other.bu_value_.size()) {
             bu2_digit = other.bu_value_[i] - '0';
           }
-          if (bu1_digit == 0) {
-            
+           if (borrow) {
+            bu1_digit = bu1_digit - 1;
+            borrow = false;
           }
-          sub = bu1_digit - bu2_digit; // hay que poner menos '0' o sino no suma bien
+          if (bu1_digit < bu2_digit) {
+            bu1_digit = bu1_digit + 10;
+            borrow = true;
+          }
+          sub = bu1_digit - bu2_digit; 
           sub = sub % 10;
-           // el carry se le suma al numero siguiente
           result.bu_value_.push_back(sub + '0');
         }
       return result;
   }
 
-  // mod
   bool operator!=(const BigUnsigned& bu1, const BigUnsigned& bu2) {
     return !(bu1 == bu2);
   }
 
-  // BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const { // uso la sobrecarga de operador+
-   
-  // }
 
-  // necesario para operator*
-  unsigned int VectorToUnsignedIntReverse(const std::vector<unsigned char>& vec) {
-    unsigned int number = 0;
-    unsigned int multiplier = 1;
+  // necesario para mi operator*
+  unsigned int VectorToUnsignedInt(const std::vector<unsigned char>& vec) {
+    unsigned int number{0};
+    unsigned int multiplier{1};
     
     for (unsigned char digit : vec) {
         number += (digit - '0') * multiplier;
@@ -216,8 +193,8 @@
 
   BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
     BigUnsigned multiplication;
-    unsigned int this_value = VectorToUnsignedIntReverse(bu_value_);
-    unsigned int other_value = VectorToUnsignedIntReverse(other.bu_value_);
+    unsigned int this_value = VectorToUnsignedInt(bu_value_);
+    unsigned int other_value = VectorToUnsignedInt(other.bu_value_);
     unsigned int iterations = std::min(this_value, other_value);
 
     while (iterations != 0) {  
@@ -227,21 +204,16 @@
     return multiplication;
 }
 
-  // friend
   // dividend(bu1) - divider(bu2)
-  // bucle infinito error
-  // la idea es restar bu1 con bu2 hasta que la resta sea mayor que bu2 
+  // bucle infinito error 
   BigUnsigned operator/(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-    BigUnsigned operation = bu1 - bu2; // 15 menos 4 = 11
+    BigUnsigned operation = bu1 - bu2; // 20 menos 4 = 16
     unsigned int quotient{0};
 
-    while (!(operation < bu2)) { // while (operation > bu2) 16 > 4? si 
-      ++quotient; // c = 1
-      std::cout << "cociente= " << quotient <<  " op= " << operation  << " bu2= " << bu2 << std::endl;
-      char a;
-      std::cin >> a;
+    while (!(operation < bu2)) { // while (operation >= bu2) 16 > 4? si 
       operation = operation - bu2; // 16 menos 4 = 12
-
+      ++quotient; // c = 1
+      std::cout << quotient << " ";
     }
     return quotient;
   }
