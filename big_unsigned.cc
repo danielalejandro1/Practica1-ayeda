@@ -4,7 +4,10 @@
 
 #include "big_unsigned.h"
 
-  BigUnsigned::BigUnsigned(unsigned int n) { 
+  BigUnsigned::BigUnsigned(unsigned int n) {
+    if (n == 0) {
+      bu_value_.push_back(0);
+    }
     unsigned int digit;
     while (n != 0) {
       digit = n % 10 + '0';
