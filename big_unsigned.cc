@@ -1,226 +1,242 @@
 #include <iostream>
 #include <vector>
-#include <cassert>
+#include <string>
 
 #include "big_unsigned.h"
 
-  BigUnsigned::BigUnsigned(unsigned int n) {
-    if (n == 0) {
-      bu_value_.push_back(0);
-    }
-    unsigned int digit;
-    while (n != 0) {
-      digit = n % 10 + '0';
-      n = n / 10;
-      bu_value_.push_back(digit);
-    }
-
+// funcionando
+// si pones 0numero no se imprime correctamente en este constructor
+BigUnsigned::BigUnsigned(unsigned int n) {
+  if (n == 0) {
+    bu_value_.push_back(n + '0');
   }
+  unsigned int digit;
+  while (n != 0) {
+    digit = n % 10 + '0';
+    n = n / 10;
+    bu_value_.push_back(digit);
+  }
+}
+// funcionando
+BigUnsigned::BigUnsigned(const unsigned char* chain_ptr) {
+  while (*chain_ptr) {
+    bu_value_.insert(bu_value_.begin(), *chain_ptr);
+    ++chain_ptr;
+  }
+}
+// funcionando
+BigUnsigned::BigUnsigned(const BigUnsigned& other) {
+  bu_value_ = other.bu_value_;
+}
+// funcionando
+BigUnsigned& BigUnsigned::operator=(const BigUnsigned& other) {
+  bu_value_ = other.bu_value_;
+  return *this;
+}
 
-  BigUnsigned::BigUnsigned(const unsigned char* chain_ptr) { 
-    while (*chain_ptr != '\0') { // while (*chain_ptr)
-      bu_value_.insert(bu_value_.begin(), *chain_ptr);
-      ++chain_ptr;
+// funcionando
+std::istream& operator>>(std::istream& is, BigUnsigned& other) {
+  std::string big_unsigned; // 1234
+  is >> big_unsigned;
+  other.bu_value_.clear(); // para eliminar el 0 del principio residual
+  for(char character : big_unsigned) {
+    other.bu_value_.insert(other.bu_value_.begin(), character); // lo meto al reves para que al imprimirlo lo imprima bien
+  }
+  return is;
+}
+
+// funcionando
+bool BigUnsigned::operator==(const BigUnsigned& other) const {
+  if (bu_value_.size() != other.bu_value_.size()) { // si los tamaños son distintos no son el mismo numero
+    return false;
+  }
+  bool equal;
+  for(size_t i{0}; i < other.bu_value_.size(); ++i) {
+    if (bu_value_[i] == other.bu_value_[i]) { // si cada elemento es igual
+      equal = true;
     }
-  }
-
- // Constructor de copia
-  BigUnsigned::BigUnsigned(const BigUnsigned& other) {
-    bu_digit_ = other.bu_digit_;
-    bu_value_ = other.bu_value_;
-  }
-  
-  
-  // ● Asignación:
-  BigUnsigned& BigUnsigned::operator=(const BigUnsigned& other) { 
-    if (this != &other) { // evitar la autoasignacion
-      bu_digit_ = other.bu_digit_;
-      bu_value_ = other.bu_value_;
-    }
-    return *this;
-  }
-
-  // ● Inserción y extracción en flujo: (friends)
-  std::ostream& operator<<(std::ostream& os, const BigUnsigned& other) {
-    for (int i = other.GetBuValue().size() - 1; i >= 0; --i) { 
-      os << other.GetBuValue()[i];
-    }
-    return os;
-  }
-
-
-  // std::istream& operator>>(std::istream& is, BigUnsigned& other) { // leer datos std::cin >> bu5;
-  
-  // }
-
-  // ● Comparación: (friends)
-  bool BigUnsigned::operator==(const BigUnsigned& other) const { // mismo tamaño y mismos elementos en misma posicion
-    if (bu_value_.size() != other.bu_value_.size()) {
+    else {
       return false;
     }
-    for (unsigned int i = 0; i < other.bu_value_.size(); ++i) {
-      if (bu_value_[i] != other.bu_value_[i]) {
+  }
+  return equal; 
+}
+
+bool BigUnsigned::operator!=(const BigUnsigned& other) const {
+  return !(*this == other);
+}
+
+// funcionando
+bool operator<(const BigUnsigned& bu1, const BigUnsigned& bu2) { // 1234 1233
+  if (bu1.bu_value_.size() > bu2.bu_value_.size()) {
+    return false;
+  }
+  if (bu1.bu_value_.size() < bu2.bu_value_.size()) {
+    return true;
+  }
+  if (bu1.bu_value_.size() == bu2.bu_value_.size()) {
+    for (size_t i{0}; i < bu1.bu_value_.size(); ++i) {
+      if (bu1.bu_value_[i] > bu2.bu_value_[i]) {
         return false;
       }
     }
-    return true;
   }
+  return true;
+}
 
-  bool operator<(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-    bool is_lower = false;
-    if (bu1.bu_value_.size() < bu2.bu_value_.size()) {
-      is_lower = true;
-    }
-    else if (bu1.bu_value_.size() > bu2.bu_value_.size()) {
-      is_lower = false;
-    }
-    else { // ==
-      for (int i = bu1.GetBuValue().size() - 1; i >= 0; --i) {
-        if (bu1.bu_value_[i] < bu2.bu_value_[i]) {
-          is_lower= true;
-        }
-        else {
-          is_lower = false;
-        }
+BigUnsigned operator+(const BigUnsigned& bu1, const BigUnsigned& bu2) {
+  BigUnsigned result;
+    result.bu_value_.clear();
+    unsigned int carry = 0;
+    // mismo tamaños de vectores
+    if (bu1.bu_value_.size() == bu2.bu_value_.size()) {
+      for (size_t i = 0; i < bu1.bu_value_.size(); ++i) {
+        unsigned int sum = ((bu1.bu_value_[i] - '0') + (bu2.bu_value_[i] - '0')) + carry;
+        carry = sum / 10;  
+        result.bu_value_.push_back((sum % 10) + '0'); 
       }
     }
-    return is_lower;
-  }
-
-  // //   ● Incremento/decremento:
-
-  // // Pre-incremento
-  BigUnsigned& BigUnsigned::operator++() {
-    BigUnsigned pre_increment;
-    pre_increment.bu_value_.push_back('1');
-    *this = *this + pre_increment;
-    return *this;
-  }
-
-  // Post-incremento
-  BigUnsigned BigUnsigned::operator++(int n) {  
-    BigUnsigned post_increment = *this;  
-    ++(*this);                 
-    return post_increment;
-  }
-
-  // Pre-decremento
-  BigUnsigned& BigUnsigned::operator--() {
-    BigUnsigned pre_decrement;
-    pre_decrement.bu_value_.push_back('1');
-    *this = *this - pre_decrement;
-    return *this;
-  }
-
-  // Post-decremento
-  BigUnsigned BigUnsigned::operator--(int n) { 
-    BigUnsigned post_decrement = *this;  
-    --(*this);                 
-    return post_decrement;
-  } 
-
-   // ● Operadores aritméticos:
-   BigUnsigned operator+(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-      unsigned int carry{0};
-      unsigned int sum{0};
-      BigUnsigned result;
-      unsigned int max_bu_size = std::max(bu1.bu_value_.size(), bu2.bu_value_.size());
-        
-        for (unsigned int i = 0; i < max_bu_size; ++i) {
-          unsigned int bu1_digit{0};
-          if (i < bu1.bu_value_.size()) {
-            bu1_digit = bu1.bu_value_[i] - '0';
-          }
-          unsigned int bu2_digit{0};
-          if (i < bu2.bu_value_.size()) {
-            bu2_digit = bu2.bu_value_[i] - '0';
-          }
-          sum = bu1_digit + bu2_digit + carry; 
-          carry = sum / 10;
-          sum = sum % 10;
-          result.bu_value_.push_back(sum + '0');
+    // primer vector mayor que el segundo
+    if (bu1.bu_value_.size() > bu2.bu_value_.size()) {
+      for (size_t i = 0; i < bu2.bu_value_.size(); ++i) {
+        unsigned int sum = ((bu1.bu_value_[i] - '0') + (bu2.bu_value_[i] - '0')) + carry;
+        carry = sum / 10;
+        result.bu_value_.push_back((sum % 10) + '0');
+      }
+        for (size_t j = bu2.bu_value_.size(); j < bu1.bu_value_.size(); ++j) {
+          unsigned sum = (bu1.bu_value_[j] - '0') + carry;
+          carry = sum /10;
+          result.bu_value_.push_back((sum % 10) + '0');
         }
-        if (carry == 1) { // caso en el que no queden mas operaciones de digitos y haya carry
-          result.bu_value_.push_back(carry + '0'); 
+    }
+    // segundo vector mayor que el primero
+    if (bu1.bu_value_.size() < bu2.bu_value_.size()) {
+      for (size_t i = 0; i < bu1.bu_value_.size(); ++i) {
+        unsigned int sum = ((bu1.bu_value_[i] - '0') + (bu2.bu_value_[i] - '0')) + carry;
+        carry = sum / 10;
+        result.bu_value_.push_back((sum % 10) + '0');
+      }
+        for (size_t j = bu1.bu_value_.size(); j < bu2.bu_value_.size(); ++j) {
+          unsigned sum = (bu2.bu_value_[j] - '0') + carry;
+          carry = sum /10;
+          result.bu_value_.push_back((sum % 10) + '0');
         }
+    }
+    // si queda carry añado un 1 al principio
+    if (carry > 0) {
+        result.bu_value_.push_back(carry + '0');
+    }
+    return result;
+}
+// funcionando
+BigUnsigned BigUnsigned::operator-(const BigUnsigned& other) const {
+   BigUnsigned result;
+    result.bu_value_.clear();
+    unsigned int borrow = 0;
+    // caso this < other
+    if (bu_value_.size() < other.bu_value_.size()) { // bien
+      result.bu_value_.push_back('0');
       return result;
     }
-      
-  BigUnsigned BigUnsigned::operator-(const BigUnsigned& other) const {
-      unsigned int sub{0};
-      BigUnsigned result;
-      bool borrow = false; // flag para ver si el siguiente numero se le resta 1
-      unsigned int max_bu_size = std::max(bu_value_.size(), other.bu_value_.size());
-        
-        for (unsigned int i = 0; i < max_bu_size; ++i) {
-          unsigned int bu1_digit{0};
-          if (i < bu_value_.size()) {
-            bu1_digit = bu_value_[i] - '0';
+  
+    // caso this == other
+    if (bu_value_.size() == other.bu_value_.size()) { // bien
+      for (size_t i = 0; i < bu_value_.size(); ++i) {
+        if ((bu_value_[i] - '0') < (other.bu_value_[i] - '0')) { // cocinada directa del cheff
+          result.bu_value_.clear(); // se carga un 5 random que aparece
+          result.bu_value_.push_back('0');
+          return result;
+        }
+         int sub = (bu_value_[i] - '0') - (other.bu_value_[i] - '0') - borrow;
+        if (sub < 0) {
+          sub = sub + 10;
+          borrow = 1;
+        }
+        else {
+          borrow = 0;
+        }
+        result.bu_value_.push_back(sub + '0'); 
+      }
+    }
+    // // primer vector mayor que el segundo
+    if (bu_value_.size() > other.bu_value_.size()) {
+      for (size_t i = 0; i < other.bu_value_.size(); ++i) {
+        int sub = ((bu_value_[i] - '0') - (other.bu_value_[i] - '0')) - borrow;
+        if (sub < 0) {
+          sub = sub + 10;
+          borrow = 1;
+        }
+        else {
+          borrow = 0;
+        }
+        result.bu_value_.push_back(sub + '0');
+      }
+        for (size_t j = other.bu_value_.size(); j < bu_value_.size(); ++j) {
+          int sub = (bu_value_[j] - '0') - borrow;
+          if (sub < 0) {
+            sub = sub + 10;
+            borrow = 1;
           }
-          unsigned int bu2_digit{0};
-          if (i < other.bu_value_.size()) {
-            bu2_digit = other.bu_value_[i] - '0';
+          else {
+            borrow = 0;
           }
-           if (borrow) {
-            bu1_digit = bu1_digit - 1;
-            borrow = false;
-          }
-          if (bu1_digit < bu2_digit) {
-            bu1_digit = bu1_digit + 10;
-            borrow = true;
-          }
-          sub = bu1_digit - bu2_digit; 
-          sub = sub % 10;
           result.bu_value_.push_back(sub + '0');
         }
-      return result;
-  }
-
-  bool operator!=(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-    return !(bu1 == bu2);
-  }
-
-
-  // necesario para mi operator*
-  unsigned int VectorToUnsignedInt(const std::vector<unsigned char>& vec) {
-    unsigned int number{0};
-    unsigned int multiplier{1};
-    
-    for (unsigned char digit : vec) {
-        number += (digit - '0') * multiplier;
-        multiplier *= 10;
     }
-    
-    return number;
+    return result;
 }
 
-  BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
-    BigUnsigned multiplication;
-    unsigned int this_value = VectorToUnsignedInt(bu_value_);
-    unsigned int other_value = VectorToUnsignedInt(other.bu_value_);
-    unsigned int iterations = std::min(this_value, other_value);
+ // funcionando
+ BigUnsigned& BigUnsigned::operator++() {
+  BigUnsigned one{1};
+  *this = *this + one;
+  return *this;
+ }
 
-    while (iterations != 0) {  
-        multiplication = multiplication + *this;
-        --iterations;
-    }
-    return multiplication;
-}
+ // funcionando
+ BigUnsigned BigUnsigned::operator++(int) {
+  BigUnsigned temp = *this;
+  BigUnsigned one{1};
+  *this = *this + one;
+  return temp;
+ }
+ // funcionando
+ BigUnsigned& BigUnsigned::operator--() {
+  BigUnsigned one{1};
+  *this = *this - one;
+  return *this;
+ }
+ // funcionando
+ BigUnsigned BigUnsigned::operator--(int) { 
+  BigUnsigned temp = *this;
+  BigUnsigned one{1};
+  *this = *this - one;
+  return temp;
+ }
 
-  // dividend(bu1) - divider(bu2)
-  // bucle infinito error 
-  BigUnsigned operator/(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-    BigUnsigned operation = bu1 - bu2; // 20 menos 4 = 16
-    unsigned int quotient{0};
+ // la idea es que si es 1234 * 3 haga 
+ // repeat > this + this (other times)
+ // funciona x * 1..9 pero a partir de 10 da bucle infinito
+ // tengo el prescentimiento de que es porque lo comparo con 0 y a partir de 2 cifras al usar -- pondria 00, tres cifras 000 y asi que son != 0
+ // de hecho el problema es que compara 00 con 0 no sale del while y pasa de 00 a 99
+ BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
+   BigUnsigned result;
+   BigUnsigned zero;
+   BigUnsigned other_copy = other;
+   while (other_copy != zero) {
+     result = result + *this; // sumar el mismo numero hasta que other sea = 0 
+     --other_copy;
+     std::cout << other_copy << std::endl;
+     char a; // debugeo
+     std::cin >> a;
+   }
+   return result;
+ }
 
-    while (!(operation < bu2)) { // while (operation >= bu2) 16 > 4? si 
-      operation = operation - bu2; // 16 menos 4 = 12
-      ++quotient; // c = 1
-      std::cout << quotient << " ";
-    }
-    return quotient;
+// funcionando
+std::ostream& operator<<(std::ostream& os, const BigUnsigned& other) {
+  for (int i = other.bu_value_.size() - 1; i >= 0; --i) {
+    os << other.bu_value_[i];
   }
-
-  // BigUnsigned::BigUnsigned operator%(const BigUnsigned& other) const {
-
-  // }
+  return os;
+}
